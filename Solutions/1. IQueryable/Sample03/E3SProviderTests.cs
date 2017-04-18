@@ -38,7 +38,7 @@ namespace Sample03
 		[TestMethod]
 		public void WithProvider()
 		{
-			var employees = new E3SEntitySet<EmployeeEntity>(ConfigurationManager.AppSettings["user"], "R$j3S&qr82T");
+			var employees = new E3SEntitySet<EmployeeEntity>(ConfigurationManager.AppSettings["user"], "");
 
 			foreach (var emp in employees.Where(e => e.workstation == "EPRUIZHW0249"))
 			{
