@@ -11,13 +11,21 @@ namespace Sample03
 	{
 		StringBuilder resultString;
 
-		public string Translate(Expression exp)
+        private List<string> queries = new List<string>();
+
+		public List<string> Translate(Expression exp)
 		{
 			resultString = new StringBuilder();
 			Visit(exp);
 
-			return resultString.ToString();
+			return queries;
 		}
+
+        private void AddQuery()
+        {
+            queries.Add(resultString.ToString());
+            resultString.Clear();
+        }
 
 		protected override Expression VisitMethodCall(MethodCallExpression node)
 		{
@@ -46,6 +54,7 @@ namespace Sample03
                 }
 
                 resultString.Append(")");
+                AddQuery();
                 return node;
             }
             return base.VisitMethodCall(node);
@@ -82,6 +91,12 @@ namespace Sample03
                     resultString.Append(constant.Value.ToString());
                     // Visit(constant);
                     resultString.Append(")");
+                    AddQuery();
+                    break;
+                case ExpressionType.And:
+                case ExpressionType.AndAlso:
+                    Visit(node.Left);
+                    Visit(node.Right);
                     break;
                 default:
                     throw new NotSupportedException(string.Format("Operation {0} is not supported", node.NodeType));

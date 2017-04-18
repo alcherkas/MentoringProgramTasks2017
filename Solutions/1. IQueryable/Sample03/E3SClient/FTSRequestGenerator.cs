@@ -9,8 +9,11 @@ namespace Sample03.E3SClient
 {
 	public class FTSRequestGenerator
 	{
-		private readonly UriTemplate FTSSearchTemplate = new UriTemplate(@"data/searchFts?metaType={metaType}&query={query}&fields={fields}");
+        private const string DefaultQuery = "*";
+
+        private readonly UriTemplate FTSSearchTemplate = new UriTemplate(@"data/searchFts?metaType={metaType}&query={query}&fields={fields}");
 		private readonly Uri BaseAddress;
+
 
 		public FTSRequestGenerator(string baseAddres) : this(new Uri(baseAddres))
 		{
@@ -21,26 +24,22 @@ namespace Sample03.E3SClient
 			BaseAddress = baseAddress;
 		}
 
-		public Uri GenerateRequestUrl<T>(string query = "*", int start = 0, int limit = 10)
+		public Uri GenerateRequestUrl<T>(List<string> query, int start = 0, int limit = 10)
 		{
 			return GenerateRequestUrl(typeof(T), query, start, limit);
 		}
 
-		public Uri GenerateRequestUrl(Type type, string query = "*", int start = 0, int limit = 10)
+		public Uri GenerateRequestUrl(Type type, List<string> queries = null, int start = 0, int limit = 10)
 		{
 			string metaTypeName = GetMetaTypeName(type);
+            var ftsQueryRequest = new FTSQueryRequest
+            {
 
-			var ftsQueryRequest = new FTSQueryRequest
-			{
-				Statements = new List<Statement>
-				{
-					new Statement {
-						Query = query
-					}
-				},
-				Start = start,
-				Limit = limit
-			};
+                Statements = queries == null ? new List<Statement> { new Statement { Query = DefaultQuery }} 
+                                             : queries.Select(q => new Statement { Query = q }).ToList(),
+                Start = start,
+                Limit = limit
+            };
 
 			var ftsQueryRequestString = JsonConvert.SerializeObject(ftsQueryRequest);
 
