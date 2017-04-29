@@ -34,6 +34,8 @@
             this.sourceTextBox = new System.Windows.Forms.TextBox();
             this.label1 = new System.Windows.Forms.Label();
             this.downloadButton = new System.Windows.Forms.Button();
+            this.PathSelector = new System.Windows.Forms.LinkLabel();
+            this.label2 = new System.Windows.Forms.Label();
             ((System.ComponentModel.ISupportInitialize)(this.tasksGrid)).BeginInit();
             this.groupBox1.SuspendLayout();
             this.SuspendLayout();
@@ -45,12 +47,12 @@
             this.tasksGrid.Location = new System.Drawing.Point(3, 16);
             this.tasksGrid.Name = "tasksGrid";
             this.tasksGrid.RowHeadersVisible = false;
+            this.tasksGrid.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.FullRowSelect;
             this.tasksGrid.Size = new System.Drawing.Size(453, 198);
             this.tasksGrid.TabIndex = 0;
             // 
             // groupBox1
             // 
-            this.groupBox1.Controls.Add(this.cancelButton);
             this.groupBox1.Controls.Add(this.tasksGrid);
             this.groupBox1.Location = new System.Drawing.Point(12, 85);
             this.groupBox1.Name = "groupBox1";
@@ -61,12 +63,13 @@
             // 
             // cancelButton
             // 
-            this.cancelButton.Location = new System.Drawing.Point(378, 183);
+            this.cancelButton.Location = new System.Drawing.Point(393, 308);
             this.cancelButton.Name = "cancelButton";
             this.cancelButton.Size = new System.Drawing.Size(75, 23);
             this.cancelButton.TabIndex = 1;
             this.cancelButton.Text = "Cancel";
             this.cancelButton.UseVisualStyleBackColor = true;
+            this.cancelButton.Click += new System.EventHandler(this.cancelButton_Click);
             // 
             // sourceTextBox
             // 
@@ -94,11 +97,33 @@
             this.downloadButton.UseVisualStyleBackColor = true;
             this.downloadButton.Click += new System.EventHandler(this.downloadButton_Click);
             // 
+            // PathSelector
+            // 
+            this.PathSelector.Location = new System.Drawing.Point(114, 61);
+            this.PathSelector.Name = "PathSelector";
+            this.PathSelector.Size = new System.Drawing.Size(276, 13);
+            this.PathSelector.TabIndex = 5;
+            this.PathSelector.TabStop = true;
+            this.PathSelector.Text = "Path";
+            this.PathSelector.LinkClicked += new System.Windows.Forms.LinkLabelLinkClickedEventHandler(this.PathSelector_LinkClicked);
+            // 
+            // label2
+            // 
+            this.label2.AutoSize = true;
+            this.label2.Location = new System.Drawing.Point(21, 61);
+            this.label2.Name = "label2";
+            this.label2.Size = new System.Drawing.Size(87, 13);
+            this.label2.TabIndex = 6;
+            this.label2.Text = "Download folder:";
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(483, 313);
+            this.ClientSize = new System.Drawing.Size(483, 339);
+            this.Controls.Add(this.label2);
+            this.Controls.Add(this.PathSelector);
+            this.Controls.Add(this.cancelButton);
             this.Controls.Add(this.downloadButton);
             this.Controls.Add(this.label1);
             this.Controls.Add(this.sourceTextBox);
@@ -120,6 +145,8 @@
         private System.Windows.Forms.TextBox sourceTextBox;
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.Button downloadButton;
+        private System.Windows.Forms.LinkLabel PathSelector;
+        private System.Windows.Forms.Label label2;
     }
 }
 
