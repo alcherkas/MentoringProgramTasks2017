@@ -19,6 +19,8 @@ namespace WindowsService
             var inputDirectoryPath = Path.Combine(currentDirectory, InputFolderName);
             var outputDirectoryPath = Path.Combine(currentDirectory, OutputFolderName);
 
+            Console.WriteLine(currentDirectory);
+
             Console.WriteLine(
                 $"Put images or Pdf documents into {inputDirectoryPath}.{Environment.NewLine}Result you can see in {outputDirectoryPath}");
 
@@ -36,15 +38,24 @@ namespace WindowsService
             var logFactory = new LogFactory(logConfig);
 
             HostFactory.Run(
-                conf => conf.Service<FileConcatenationService>(
+                conf => conf.Service<IFileMonitoringService>(
                     serv =>
                     {
-                        serv.ConstructUsing(() => new FileConcatenationService(inputDirectoryPath, outputDirectoryPath));
+                        serv.ConstructUsing(() => GetFileMonitoringService(inputDirectoryPath, outputDirectoryPath));
                         serv.WhenStarted(s => s.Start());
                         serv.WhenStopped(s => s.Stop());
                     }
                 ).UseNLog(logFactory)
             );
         }
+
+        private static IFileConcatenationService GetFileConcatenationService(string outputDirectoryPath) =>
+            new FileConcatenationService(outputDirectoryPath, GetFileAvailabilityService());
+
+        private static IFileAvailabilityService GetFileAvailabilityService()
+            => new FileAvailabilityService();
+
+        private static IFileMonitoringService GetFileMonitoringService(string inputDirectoryName, string outputDirectoryPath)
+            => new FileMonitoringService(GetFileConcatenationService(outputDirectoryPath), inputDirectoryName);
     }
 }

@@ -1,97 +1,60 @@
 ﻿using System;
 using System.IO;
-using System.Threading;
 using MigraDoc.DocumentObjectModel;
 using MigraDoc.DocumentObjectModel.Shapes;
 using MigraDoc.Rendering;
 
 namespace WindowsService
 {
-    class FileConcatenationService
+    public interface IFileConcatenationService
     {
+        void Concatenate(string inputDirectoryName, Func<bool> isWorkStoped);
+    }
+
+    public class FileConcatenationService : IFileConcatenationService
+    {
+        private readonly IFileAvailabilityService _fileAvailabilityService;
         private const string OutputFile = "out.pdf";
         private const int FileOpenAttemptsCount = 3;
 
-        private readonly FileSystemWatcher _watcher;
-
-        private readonly string _inputDirectoryName;
         private readonly string _outputDirectoryName;
 
-        private readonly Thread _workingThread;
-        private readonly ManualResetEvent _workStop;
-        private readonly AutoResetEvent _newFile;
-
-        public FileConcatenationService(string inputDirectoryName, string outputDirectoryName)
+        public FileConcatenationService(string outputDirectoryName, IFileAvailabilityService fileAvailabilityService)
         {
-            _inputDirectoryName = inputDirectoryName;
+            _fileAvailabilityService = fileAvailabilityService;
             _outputDirectoryName = outputDirectoryName;
-
-            if (!Directory.Exists(inputDirectoryName))
-                Directory.CreateDirectory(inputDirectoryName);
-
-            if (!Directory.Exists(outputDirectoryName))
-                Directory.CreateDirectory(outputDirectoryName);
-
-            _workingThread = new Thread(WorkProc);
-            _workStop = new ManualResetEvent(false);
-            _newFile = new AutoResetEvent(false);
-
-            _watcher = new FileSystemWatcher(inputDirectoryName);
-            _watcher.Created += FileCreated;
+            DirectoryAvailabilityService.CreateNew(_outputDirectoryName);
         }
 
-        private void WorkProc()
+        public void Concatenate(string inputDirectoryName, Func<bool> isWorkStoped)
         {
-            do
+            Document document = new Document();
+            Section section = document.AddSection();
+            foreach (var file in Directory.EnumerateFiles(inputDirectoryName))
             {
-                Document document = new Document();
-                Section section = document.AddSection();
-                foreach (var file in Directory.EnumerateFiles(_inputDirectoryName))
+                if (isWorkStoped())
                 {
-                    if (_workStop.WaitOne(TimeSpan.Zero))
-                    {
-                        return;
-                    }
-
-                    if (TryOpen(file, FileOpenAttemptsCount))
-                    {
-                        CreatePdf(file, document, section);
-                    }
+                    return;
                 }
 
-                var render = new PdfDocumentRenderer();
-                render.Document = document;
-                render.RenderDocument();
-                render.Save(Path.Combine(_outputDirectoryName, OutputFile));
+                if (_fileAvailabilityService.TryOpen(file))
+                {
+                    CreatePdf(file, document, section);
+                }
+
+                CreateDocument(document);
             }
-            while (WaitHandle.WaitAny(new WaitHandle[] { _workStop, _newFile }) != 0);
         }
 
-        private void FileCreated(object sender, FileSystemEventArgs e)
+        private void CreateDocument(Document document)
         {
-            _newFile.Set();
+            var render = new PdfDocumentRenderer();
+            render.Document = document;
+            render.RenderDocument();
+            render.Save(Path.Combine(_outputDirectoryName, OutputFile));
         }
 
-        private bool TryOpen(string fullPath, int fileOpenAttemptsCount)
-        {
-            for (int attemptNumber = 0; attemptNumber < fileOpenAttemptsCount; attemptNumber++)
-            {
-                try
-                {
-                    var file = File.Open(fullPath, FileMode.Open, FileAccess.Read, FileShare.None);
-                    file.Close();
-                    return true;
-                }
-                catch (IOException)
-                {
-                    Thread.Sleep(3000);
-                }
-            }
-
-            return false;
-        }
-
-        public void CreatePdf(string file, Document document, Section section)
+        private static void CreatePdf(string file, Document document, Section section)
         {
             var img = section.AddImage(file);
 
@@ -105,19 +68,6 @@ namespace WindowsService
             img.Width = document.DefaultPageSetup.PageWidth;
 
             section.AddPageBreak();
-        }
-
-        public void Start()
-        {
-            _workingThread.Start();
-            _watcher.EnableRaisingEvents = true;
-        }
-
-        public void Stop()
-        {
-            _watcher.EnableRaisingEvents = false;
-            _workStop.Set();
-            _workingThread.Join();
         }
     }
 }
