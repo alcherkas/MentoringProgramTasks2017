@@ -28,8 +28,8 @@ namespace WindowsService
             var logConfig = new LoggingConfiguration();
             var target = new FileTarget
             {
-                Name = "Def",
-                FileName = Path.Combine(currentDirectory, "log.txt"),
+                Name = "Def2",
+                FileName = Path.Combine(currentDirectory, "log2.txt"),
                 Layout = "${date} ${message} ${onexception:inner=${exception:format=toString}}"
             };
 
@@ -39,10 +39,10 @@ namespace WindowsService
             var logFactory = new LogFactory(logConfig);
 
             HostFactory.Run(
-                conf => conf.Service<IFileMonitoringService>(
+                conf => conf.Service<IFileConcatenationService>(
                     serv =>
                     {
-                        serv.ConstructUsing(() => GetFileMonitoringService(inputDirectoryPath));
+                        serv.ConstructUsing(() => GetFileConcatenationService(outputDirectoryPath));
                         serv.WhenStarted(s => s.Start());
                         serv.WhenStopped(s => s.Stop());
                     }

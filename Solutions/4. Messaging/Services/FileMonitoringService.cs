@@ -1,5 +1,4 @@
-﻿using System;
-using System.IO;
+﻿using System.IO;
 using System.Threading;
 
 namespace WindowsService
@@ -12,7 +11,7 @@ namespace WindowsService
 
     public class FileMonitoringService : IFileMonitoringService
     {
-        private readonly IFileConcatenationService _fileConcatenationService;
+        private readonly IMessageQueueSenderService _messageQueueSender;
 
         private readonly FileSystemWatcher _watcher;
 
@@ -22,9 +21,9 @@ namespace WindowsService
         private readonly ManualResetEvent _workStop;
         private readonly AutoResetEvent _newFile;
 
-        public FileMonitoringService(IFileConcatenationService fileConcatenationService, string inputDirectoryName)
+        public FileMonitoringService(IMessageQueueSenderService messageQueueSender, string inputDirectoryName)
         {
-            _fileConcatenationService = fileConcatenationService;
+            _messageQueueSender = messageQueueSender;
 
             _workingThread = new Thread(WorkProc);
             _workStop = new ManualResetEvent(false);
@@ -54,7 +53,7 @@ namespace WindowsService
         {
             do
             {
-                _fileConcatenationService.Concatenate(_inputDirectoryName, () => _workStop.WaitOne(TimeSpan.Zero));
+                _messageQueueSender.Send(_inputDirectoryName);
             }
             while (WaitHandle.WaitAny(new WaitHandle[] { _workStop, _newFile }) != 0);
         }

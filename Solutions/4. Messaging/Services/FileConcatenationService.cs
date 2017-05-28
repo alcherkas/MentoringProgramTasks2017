@@ -3,46 +3,68 @@ using System.IO;
 using MigraDoc.DocumentObjectModel;
 using MigraDoc.DocumentObjectModel.Shapes;
 using MigraDoc.Rendering;
+using System.Threading;
 
 namespace WindowsService
 {
     public interface IFileConcatenationService
-    {
-        void Concatenate(string inputDirectoryName, Func<bool> isWorkStoped);
+    { 
+        void Start();
+
+        void Stop();
+
+        void Concatenate();
     }
 
     public class FileConcatenationService : IFileConcatenationService
     {
         private readonly IFileAvailabilityService _fileAvailabilityService;
+        private readonly IMessageQueueReceiverService _messageReceiver;
         private const string OutputFile = "out.pdf";
         private const int FileOpenAttemptsCount = 3;
 
         private readonly string _outputDirectoryName;
 
-        public FileConcatenationService(string outputDirectoryName, IFileAvailabilityService fileAvailabilityService)
+        private readonly Thread _thread;
+
+        private bool _isWorkStoped;
+
+        public FileConcatenationService(string outputDirectoryName, IFileAvailabilityService fileAvailabilityService, IMessageQueueReceiverService messageReceiver)
         {
             _fileAvailabilityService = fileAvailabilityService;
+            _messageReceiver = messageReceiver;
             _outputDirectoryName = outputDirectoryName;
             DirectoryAvailabilityService.CreateNew(_outputDirectoryName);
+
+            _thread = new Thread(Concatenate);
         }
 
-        public void Concatenate(string inputDirectoryName, Func<bool> isWorkStoped)
+        public void Start() => _thread.Start();
+
+        public void Stop() => _isWorkStoped = true;
+
+        public void Concatenate()
         {
-            Document document = new Document();
-            Section section = document.AddSection();
-            foreach (var file in Directory.EnumerateFiles(inputDirectoryName))
+            while (!_isWorkStoped)
             {
-                if (isWorkStoped())
-                {
-                    return;
-                }
+                var inputDirectoryName = _messageReceiver.Receive();
 
-                if (_fileAvailabilityService.TryOpen(file))
+                Document document = new Document();
+                Section section = document.AddSection();
+                foreach (var file in Directory.EnumerateFiles(inputDirectoryName))
                 {
-                    CreatePdf(file, document, section);
-                }
+                    if (_isWorkStoped)
+                    {
+                        return;
+                    }
 
-                CreateDocument(document);
+                    if (_fileAvailabilityService.TryOpen(file))
+                    {
+                        CreatePdf(file, document, section);
+                    }
+
+                    CreateDocument(document);
+                }
             }
         }
 
