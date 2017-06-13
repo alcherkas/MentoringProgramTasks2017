@@ -62,7 +62,7 @@ namespace WindowsService
             => new FileAvailabilityService();
 
         private static IFileMonitoringService GetFileMonitoringService(string inputDirectoryName)
-            => new FileMonitoringService(GetMessageQueueService(), inputDirectoryName);
+            => new FileMonitoringService();
 
         private static MessageQueueService GetMessageQueueService() => new MessageQueueService();
     }
